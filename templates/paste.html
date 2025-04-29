@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ title or paste_id }} – Sinners Pastes</title>
+
+  <style>
+    /* minimal dark theme */
+    body {
+      margin: 0; padding: 0;
+      background: #0a0b13; color: #e0e0e0;
+      font-family:'Segoe UI',sans-serif;
+      /* custom cursor with hotspot coordinates (16x16) */
+      cursor: url('https://r2.guns.lol/2dadf882-86f8-41d9-8fc6-db6bfa8caeb8.webp') 16 16, auto;
+    }
+    header.nav {
+      padding:1rem 2rem; background:#11121b; color:#fff;
+    }
+    header.nav .logo { font-size:1.5rem; }
+    main {
+      padding:2rem;
+    }
+    .title-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .title-row h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+    .copy-btn {
+      margin-left: 1rem;
+      padding: .5rem 1rem;
+      background: #53ffff;
+      color: #11121b;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: .9rem;
+      transition: background .2s;
+    }
+    .copy-btn:hover {
+      background: #3ad3d3;
+    }
+    footer {
+      text-align:center; padding:1rem; color:#666; font-size:.8rem;
+    }
+
+    /* AUDIO CONTROLS */
+    #mute-btn {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      color: #e0e0e0;
+      cursor: pointer;
+      z-index: 1000;
+    }
+    #volume-slider {
+      position: fixed;
+      bottom: 1rem;
+      left: 4rem;
+      width: 100px;
+      z-index: 1000;
+    }
+  </style>
+
+  <!-- CodeMirror CSS -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/codemirror.min.css"/>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/theme/dracula.min.css"/>
+</head>
+<body>
+
+  <!-- background audio -->
+  <audio
+    id="bg-audio"
+    src="https://cdn.discordapp.com/attachments/1343576085098664020/1366630449656496189/C418_-_Subwoofer_Lullaby_-_Minecraft_Volume_Alpha.mp4?ex=6811a549&is=681053c9&hm=f5a0587a4426bd1c7d8e91d69a6d66eb700d70680ff8e99540a71013d118f515&"
+    loop
+    autoplay
+  ></audio>
+  <button id="mute-btn" title="Mute/Unmute">🔊</button>
+  <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1" title="Volume">
+
+  <header class="nav">
+    <div class="logo">SINNERS<span style="font-weight:300;">PASTES</span></div>
+  </header>
+
+  <main>
+    <div class="title-row">
+      <!-- show the user-entered title, or fallback to the ID -->
+      <h1>{{ title or paste_id }}</h1>
+
+      <button id="copy-btn" class="copy-btn" title="Copy to clipboard">
+        Copy
+      </button>
+    </div>
+
+    <textarea id="paste-editor" readonly>{{ content }}</textarea>
+  </main>
+
+  <footer>© 2025 Sinners Pastes</footer>
+
+  <!-- CodeMirror & modes -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/css/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/htmlmixed/htmlmixed.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/clike/clike.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/php/php.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/ruby/ruby.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/go/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/sql/sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/shell/shell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/markdown/markdown.min.js"></script>
+
+  <script>
+    // Initialize CodeMirror in read-only mode
+    const editor = CodeMirror.fromTextArea(
+      document.getElementById('paste-editor'), {
+        mode: 'text/plain',
+        theme: 'dracula',
+        lineNumbers: true,
+        readOnly: true,
+        viewportMargin: Infinity
+      }
+    );
+
+    // Copy button logic
+    document.getElementById('copy-btn').addEventListener('click', () => {
+      const code = editor.getValue();
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.getElementById('copy-btn');
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    });
+
+    // ─── Audio Controls ─────────────────────────────────────────────────
+    const audio  = document.getElementById('bg-audio');
+    const btn    = document.getElementById('mute-btn');
+    const slider = document.getElementById('volume-slider');
+
+    // initial state
+    audio.volume = slider.value;
+    btn.textContent = audio.muted ? '🔇' : '🔊';
+
+    // kickstart playback on first user interaction
+    const kickstart = () => {
+      audio.play().catch(e => console.warn('playback error', e));
+      document.body.removeEventListener('click', kickstart);
+    };
+    document.body.addEventListener('click', kickstart, { once: true });
+
+    // mute/unmute toggle
+    btn.addEventListener('click', () => {
+      audio.muted = !audio.muted;
+      btn.textContent = audio.muted ? '🔇' : '🔊';
+      if (!audio.muted) audio.play().catch(() => {});
+    });
+
+    // volume slider control
+    slider.addEventListener('input', e => {
+      audio.volume = e.target.value;
+      if (audio.muted && audio.volume > 0) {
+        audio.muted = false;
+        btn.textContent = '🔊';
+        audio.play().catch(() => {});
+      }
+    });
+    // ────────────────────────────────────────────────────────────────────
+  </script>
+</body>
+</html>
